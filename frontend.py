@@ -1,16 +1,16 @@
 # Standard Libraries
-import time 
+import datetime
 import json
 import pandas as pd
 
 # Third-Parties Libraries
 import streamlit as st
 
+
 # Imported Libraries
 from backend import analyze_text
 
 ## functions goes here
-
 def get_df_from_LLM(prompt, HF_api_key):
         raw_data = analyze_text(HF_api_key = HF_api_key, prompt = prompt)
 
@@ -21,26 +21,22 @@ def get_df_from_LLM(prompt, HF_api_key):
         return df
 
 ############################################################
-
 # SET UP PAGE SHENANIGANS 
 ############################################################
 
-st.set_page_config(page_title="Vacation Planner", layout = "wide")
+st.set_page_config(page_title="Vacation Planner", layout = "centered")
 st.title(body=":red[Vacation Planner]")
 st.divider()
-progress_done = False
+
 show_content = False
 
 # ###########################################################
-
 # ##LLM CODE ACTUALLY HERE
 # ###########################################################
-# #CURSE THE  MAIN #########
 
+intro_column, user_fields_column = st.columns(2)
 
-col1, col2 = st.columns(2)
-
-with col1:
+with intro_column:
     
     st.markdown('''
                 A Vacation Planning Website. By giving a place's name and 
@@ -63,7 +59,13 @@ with col1:
 
 list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space", "Computer Science",  "Gaming", "Entertainment", "Restaurants", "Wildlife", "Local Festivities", "Cultural Performances", "Nightlife", "Botanical Gardens", "Art", "History", "Nature", "Sports"]
     
-with col2:
+with user_fields_column:
+
+    ########################################################################################
+        ## USER INPUT AREA
+        ## THERE IS A LOT OF BUTTONS
+
+    ########################################################################################
 
     user_place = st.text_input(label= "Insert Place Here",
                 type="default", placeholder="Insert City Here EX: Honolulu, Hawaii/Brooklyn", label_visibility="visible")
@@ -81,10 +83,17 @@ with col2:
     
 
     if st.button("Start", type = 'primary'):
+        ########################################################################################
+        ## MOVE ALL THE LLMS DATA AND API WORK HERE PLEAAAAAAAASSEEEEEEEEEEEE
+        ########################################################################################
 
-        if (user_place != None and user_place != "") and (user_preferred_categories != [] and user_preferred_categories != None) and (HF_api_key != None and HF_api_key != ""):
+
+        ################################################################
+        ### nearby places one
+        ################################################################
+        if (user_place != None and user_place != "") and (user_preferred_categories != [] and user_preferred_categories != None) and HF_api_key != None and HF_api_key != "" and user_preferred_season != None and user_preferred_season != []:
             
-            format = '''
+            nearby_places_format = '''
             {
             "Game Over": 
             {
@@ -103,7 +112,7 @@ with col2:
                 }
             '''
 
-            prompt = f'''
+            nearby_places_prompt = f'''
                 I need 5 or less real places nearby {user_place} that are related to 
                 {user_preferred_categories} type(s) activities. It must be returned 
                 with a name, a one sentence description, the latititude coordinate, and the 
@@ -117,50 +126,79 @@ with col2:
                 Do not use Google Maps API.
                     '''
             
-            raw_data = format
+            nearby_places_raw_data = nearby_places_format
             
-        #     raw_data = analyze_text(HF_api_key = HF_api_key, prompt = prompt)
+        #     nearby_places_raw_data = analyze_text(HF_api_key = HF_api_key, prompt = nearby_places_prompt)
         
-        #     print(raw_data)
-            show_content = True
-        else:
-            st.error("Please check again if the fields are filled correctly.")
-    else:
-        st.empty()
+            ## do this 
 
 
 
-if show_content == True:
-
-        ## insert new code here## insert new code here## insert new code here## insert new code here
-        ## insert new code here## insert new code here## insert new code here## insert new code here## insert new code here
-        ## insert new code here## insert new code here## insert new code here## insert new code here## insert new code here## insert new code here
-        ## insert new code here## insert new code here## insert new code here## insert new code here## insert new code here
-        ## insert new code here## insert new code here## insert new code here## insert new code here## insert new code here
-
-
-        if user_preferred_season != None and user_preferred_season != []:
-
-                st.markdown("""
-                <style>
-                        .center-title 
-                        {
-                        text-align: center;
-                        font-size: 10px;
-                        font-weight: bold;
-                        margin: 0;   
-                        padding: 0;
+        ################################################################
+        ### SEASONAL EVENT LLM
+        ################################################################
+            seasonal_event_prompt = f'''
+                Look up 3 seasonal popular event or activities in {user_place} during {user_preferred_season}.
+                Give me the name of the event as a header and a short description as the body text.
+                 The description must be shown as bullet points:
+                 1) where it is located
+                  2) the time duration
+                  3) the common way(s) to get there
+                  4) the overall cost
+                  5) and basic information.
+                Do not output anything else. 
+                I need 3 events.
+                '''
+        ################################################################
+        ### WEATHER API
+        ################################################################
+            
+            weather_raw_data = '''{
+                        "2025-01-03": {
+                        "Date": "January 3rd, 2025",
+                        "Day Temperature": "82°F",
+                        "Weather": "Sunny"
+                        },
+                        "2025-01-04": {
+                        "Date": "January 4th, 2025",
+                        "Day Temperature": "80°F",
+                        "Weather": "Cloudy"
+                        },
+                        "2025-01-05": {
+                        "Date": "January 5th, 2025",
+                        "Day Temperature": "78°F",
+                        "Weather": "Rain"
+                        },
+                        "2025-01-06": {
+                        "Date": "January 6th, 2025",
+                        "Day Temperature": "80°F",
+                        "Weather": "Sunny"
+                        },
+                        "2025-01-07": {
+                        "Date": "January 7th, 2025",
+                        "Day Temperature": "81°F",
+                        "Weather": "Cloudy"
+                        },
+                        "2025-01-08": {
+                        "Date": "January 8th, 2025",
+                        "Day Temperature": "79°F",
+                        "Weather": "Snow"
+                        },
+                        "2025-01-09": {
+                        "Date": "January 9th, 2025",
+                        "Day Temperature": "82°F",
+                        "Weather": "Sunny"
                         }
-                </style>""", unsafe_allow_html=True)
+                        }
+                        '''
 
+            weather_df = pd.DataFrame(json.loads(weather_raw_data))
 
-                st.markdown(f"""<h2 class="center-title">{user_preferred_season[0]} AT {user_place}</h2> """ , unsafe_allow_html=True)
-                st.markdown(f"""<h2 class="center-title">From {user_start_date} to {user_end_date}</h2> """ , unsafe_allow_html=True)
-                st.divider()
+            weather_df = weather_df.transpose()
 
-                st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
-                st.header(f"{user_preferred_season[0]} Seasonal Food")
-
+        ################################################################
+        ### SEASONAL FOOD
+        ################################################################
                 # seasonal_food_format = '''
                 # {
                 # “May 3rd, 2024”
@@ -179,186 +217,180 @@ if show_content == True:
                 # }
                 # '''
 
-                seasonal_food_prompt = f'''Look up 3 seasonal food in {user_place} during {user_preferred_season}.
+            seasonal_food_prompt = f'''Look up 3 seasonal food in {user_place} during {user_preferred_season}.
                 Give me the name of the food and a short description. The short description must have the preferred way to eat it and basic information about it.  Do not output anything else.
                 I need 3 seasonal food.
                         '''
 
                 # seasonal_food_raw_data = analyze_text(HF_api_key, prompt = seasonal_food_prompt)
 
-                st.write(seasonal_food_raw_data)
-
-                st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
-
-                st.header(f"{user_preferred_season[0]} Seasonal Event")
-
-                seasonal_event_prompt = f'''
-                Look up 3 seasonal popular event or activities in {user_place} during {user_preferred_season}.
-                Give me the name of the event as a header and a short description as the body text.
-                 The description must be shown as bullet points:
-                 1) where it is located
-                  2) the time duration
-                  3) the common way(s) to get there
-                  4) the overall cost
-                  5) and basic information.
-                Do not output anything else. 
-                I need 3 events.
-                '''
-
-                # seasonal_event_raw_data = analyze_text(HF_api_key, prompt = seasonal_event_prompt)
-
-                st.write(seasonal_event_raw_data)
-
-                st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+                # st.write(seasonal_food_raw_data)
 
 
-                # ########################################################################
-                # ### do not touch weather but it is weather
-                # ########################################################################
-                st.header("Weather")
-                st.divider()
 
-                weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
 
-                weather_format = '''
+
+            show_content = True
+        else:
+            st.error("Please check again if the fields are filled correctly.")
+    else:
+        st.empty()
+
+
+##############################################################################
+### SHOWING BOTTOM CONTENTS
+##############################################################################
+if show_content == True:
+
+        ## making center alignment 
+        st.markdown("""
+        <style>
+                .center-title 
                 {
-                “May 3rd, 2024”
-                {
-                "Date": “May 3rd, 2024”,
-                “Day Temperature": “75°F”,
-                “Weather”: “Sunny",
-                },
-                {
-                “May 4th, 2024”
-                {
-                "Date": “May 3rd, 2024”,
-                “Day Temperature": “75°F”,
-                “Weather”: “Cloudy",
+                text-align: center;
+                font-size: 10px;
+                font-weight: bold;
+                margin: 0;   
+                padding: 0;
                 }
-                }
-                '''
+        </style>""", unsafe_allow_html=True)
 
 
-                weather_prompt = f'''Do not output anything else and tell me the 7 days forecast starting from {user_start_date}.
-                Give me for each day, the day temperature in Fahrenheit, and the type of weather among the choices here: {weather_choice} in the area of {user_place}. 
-                Do not use square brackets like this [ ].
-                Must be in a json string file format {weather_format} like this.
-                The days must be in order with {user_start_date} as the first date.
-                The beginning and end must be wrapped with double quotes.
-                Do not output anything else other than json file. Must be valid json string file. Do not output any other text. Do not return anything else.
-                '''
+        ##############################################################################
 
-                # weather_raw_data = analyze_text(HF_api_key = hf_api_key, prompt = weather_prompt)
-                # print(weather_raw_data)
+        #### MAIN TITLE 
+        ##############################################################################
 
-                weather_raw_data = '''{
-                "2025-01-03": {
-                "Date": "January 3rd, 2025",
-                "Day Temperature": "82°F",
-                "Weather": "Sunny"
-                },
-                "2025-01-04": {
-                "Date": "January 4th, 2025",
-                "Day Temperature": "80°F",
-                "Weather": "Cloudy"
-                },
-                "2025-01-05": {
-                "Date": "January 5th, 2025",
-                "Day Temperature": "78°F",
-                "Weather": "Rain"
-                },
-                "2025-01-06": {
-                "Date": "January 6th, 2025",
-                "Day Temperature": "80°F",
-                "Weather": "Sunny"
-                },
-                "2025-01-07": {
-                "Date": "January 7th, 2025",
-                "Day Temperature": "81°F",
-                "Weather": "Cloudy"
-                },
-                "2025-01-08": {
-                "Date": "January 8th, 2025",
-                "Day Temperature": "79°F",
-                "Weather": "Snow"
-                },
-                "2025-01-09": {
-                "Date": "January 9th, 2025",
-                "Day Temperature": "82°F",
-                "Weather": "Sunny"
-                }
-                }
-                '''
+        start_date = datetime.datetime.strftime(user_start_date, "%m-%d-%Y")
+        end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
 
-                weather_df = pd.DataFrame(json.loads(weather_raw_data))
 
-                weather_df = weather_df.transpose()
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
 
-                weather_columns = st.columns(7, border = True)
+        st.markdown(f"""<h2 class="center-title">{user_preferred_season[0]} Vacation At {user_place}</h2> """ , unsafe_allow_html=True)
 
-                for i, column in enumerate(weather_columns):
-                        column.image(f"./irasutoya_images/{weather_df["Weather"].iloc[i].lower()}.png")
-                        column.subheader(weather_df["Day Temperature"].iloc[i])
-                        column.write(weather_df["Date"].iloc[i])
+        st.markdown(f"""<h2 class="center-title">{start_date} to {end_date}</h2> """ , unsafe_allow_html=True)
+
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+
+
+
+        ##############################################################################
+
+        #### WEATHER BLOCK
+        ##############################################################################
+
+
+        st.markdown(f"""<h2 class="center-title">First Week Weather Forecast</h2> """ , unsafe_allow_html=True)
+        st.divider()
+
+        weather_columns = st.columns(7, border = True)
+
+        for i, column in enumerate(weather_columns):
+                column.image(f"./irasutoya_images/{weather_df["Weather"].iloc[i].lower()}.png")
+                column.subheader(weather_df["Day Temperature"].iloc[i])
+                column.write(weather_df["Date"].iloc[i])
 
         
+        ##############################################################################
+
+        #### BASIC INFORMATION
+        ##############################################################################
+        st.markdown(f"""<h2 class="center-title">Comprehensive Information Board</h2> """ , unsafe_allow_html=True)
+
+        st.divider()
+
+        st.subheader(f":red-background[:red[About {user_place}]]")
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+
+        ##############################################################################
+
+        #### MAP AND NEARBY PLACES TO VIEW
+        ##############################################################################
+
         st.markdown("##")
 
         st.subheader(f'''
-        Nearby Places to :red-background[:red[{user_place}]]
+         :red-background[:red[Nearby Places to {user_place}]]
+        
         ''')
         st.divider()
-        df = pd.DataFrame(json.loads(raw_data))
 
-        df = df.transpose()
+        st.write("MAN I WANT A MAP")
 
-        coordinates_df = df[['latitude', 'longitude']]
 
-        #     st.map(coordinates_df, size = 1000, color = '#ffaa00')
+# df = pd.DataFrame(json.loads(nearby_places_raw_data))
+
+# df = df.transpose()
+
+# coordinates_df = df[['latitude', 'longitude']]
+
+#     st.map(coordinates_df, size = 1000, color = '#ffaa00')
 
         st.divider()
 
         left_text_box, right_text_box = st.columns(2)
 
+        st.subheader(f''' :red-background[:red[Places of Interest in {user_place}]]''')
+
         with left_text_box:
-                st.subheader(f'''
-                :blue-background[{df["name"].iloc[0]}]
-                ''')
+                print("insert things here")
+        # st.subheader(f'''
+        # :blue-background[{df["name"].iloc[0]}]
+        # ''')
 
-                st.markdown(f'''
-                {df["description"].iloc[0]}
-                ''')
+        # st.markdown(f'''
+        # {df["description"].iloc[0]}
+        # ''')
 
-                        # st.subheader(f''' 
-                        #         :green-background[{df["name"].iloc[1]}]
-                        #         ''')
+                # st.subheader(f''' 
+                #         :green-background[{df["name"].iloc[1]}]
+                #         ''')
 
-                        # st.markdown(f'''
-                        #         {df["description"].iloc[1]}
-                        #         ''')
+                # st.markdown(f'''
+                #         {df["description"].iloc[1]}
+                #         ''')
 
-                        # st.subheader(f'''
-                        #         :red-background[{df["name"].iloc[2]}]
-                        #         ''')
+                # st.subheader(f'''
+                #         :red-background[{df["name"].iloc[2]}]
+                #         ''')
 
-                        # st.markdown(f'''
-                        #         {df["description"].iloc[2]}
-                        #         ''')
+                # st.markdown(f'''
+                #         {df["description"].iloc[2]}
+                #         ''')
 
 
-        # with right_text_box:
-        #         st.subheader(f'''
-        #                         :violet-background[{df["name"].iloc[3]}]
-        #                         ''')
+# with right_text_box:
+#         st.subheader(f'''
+#                         :violet-background[{df["name"].iloc[3]}]
+#                         ''')
 
-        #         st.markdown(f'''
-        #                         {df["description"].iloc[3]}
-        #                         ''')
+#         st.markdown(f'''
+#                         {df["description"].iloc[3]}
+#                         ''')
 
-        #         st.subheader(f''' 
-        #                         :orange-background[{df["name"].iloc[4]}]
-        #                         ''')
+#         st.subheader(f''' 
+#                         :orange-background[{df["name"].iloc[4]}]
+#                         ''')
 
-        #         st.markdown(f'''
-        #                         {df["description"].iloc[4]}
-        #                         ''')
+#         st.markdown(f'''
+#                         {df["description"].iloc[4]}
+#                         ''')
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+
+        ##############################################################################
+
+        #### seasonal food and seasonal events
+        ##############################################################################
+
+        st.subheader(f" :red-background[:red[{user_preferred_season[0]} Seasonal Food]]")
+
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+
+        st.subheader(f" :red-background[:red[{user_preferred_season[0]} Seasonal Event]]")
+
+        # seasonal_event_raw_data = analyze_text(HF_api_key, prompt = seasonal_event_prompt)
+
+        # st.write(seasonal_event_raw_data)
+
+        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
