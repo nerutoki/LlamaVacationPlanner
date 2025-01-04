@@ -48,7 +48,7 @@ def analyze_text(HF_api_key, prompt):
 
 if __name__ == "__main__":
 
-    hf_api_key = os.environ.get('hf_api_key')
+    # hf_api_key = os.environ.get('hf_api_key')
 
     user_place_city = ["Honolulu"]
     user_preferred_category = ["Gaming"]
