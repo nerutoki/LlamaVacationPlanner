@@ -12,10 +12,11 @@ from openmeteopy.options import ForecastOptions
 # Imported Libraries
 from backend import analyze_text
 from utils import remove_indentation, weather_image, season_image
+from components.weather_section import weather_section_api 
+from components.seasonal_event_section import seasonal_event_widget
+from components.seasonal_food_section import seasonal_food_widget
+from components.about_place_section import about_place_widget
 
-weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
-season_choice = ["Spring", "Summer", "Autumn", "Winter"]
-    
 ################################################################################
 # SET UP PAGE 
 ################################################################################
@@ -46,7 +47,6 @@ st.divider()
 ################################################################################
 ## control layout if LLM or Weather API is sucessful.
 show_content = False
-show_weather = False
 
 ## multiselect button for categories of interest
 list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space", 
@@ -56,40 +56,7 @@ list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space",
                       "Art", "History", "Nature", "Sports"]
 
 ##weather variables for layout
-weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
 season_choice = ["Spring", "Summer", "Autumn", "Winter"]
-
-weather_code_dict = {'0': weather_choice[3], ##Sunny
-                      '1': weather_choice[3],  ##Sunny
-                      '2': weather_choice[0],  ##Cloudy
-                      '3': weather_choice[0],  ##Cloudy
-                      '45': weather_choice[0],  ##Cloudy
-                      '48': weather_choice[0],  ##Cloudy
-                      '51': weather_choice[1],  ##Rain
-                      '53': weather_choice[1],  ##Rain
-                      '55': weather_choice[1],  ##Rain
-                      '56': weather_choice[1],  ##Rain
-                      '57': weather_choice[1],  ##Rain
-                      '61': weather_choice[1],  ##Rain
-                      '63': weather_choice[1],  ##Rain
-                      '65': weather_choice[1],  ##Rain
-                      '66': weather_choice[1],  ##Rain
-                      '67': weather_choice[1],  ##Rain
-                      '71': weather_choice[2],  ##Snow
-                      '73': weather_choice[2],  ##Snow
-                      '75': weather_choice[2],  ##Snow
-                      '77': weather_choice[2],  ##Snow
-                      '80': weather_choice[1],  ##Rain
-                      '81': weather_choice[1],  ##Rain
-                      '82': weather_choice[1],  ##Rain
-                      '85': weather_choice[2],  ##Snow
-                      '86': weather_choice[2],  ##Snow 
-                      '95': weather_choice[4],  ##Thunderstorm
-                      '96': weather_choice[4],  ##Thunderstorm
-                      '99': weather_choice[4],  ##Thunderstorm 
-                      }
-
- 
 
 
 ################################################################################
@@ -282,94 +249,10 @@ with user_fields_column:
             longitude = df_coordinates['longitude'].iloc[0]
             latitude =  df_coordinates['latitude'].iloc[0]
 
-            ##api cannot accept under -90 or above 90
-            if (longitude < 90 and longitude > -90) and (latitude < 90 and latitude > -90):
-                daily = DailyForecast()
-                options = ForecastOptions(latitude,longitude)
-
-                raw_data_open_meteo_weather = OpenMeteo(options=options, 
-                                                    hourly = None, 
-                                                    daily = daily.apparent_temperature_max()) 
-                raw_data_open_meteo_weather = OpenMeteo(options=options, 
-                                                hourly = None, 
-                                                daily = daily.weathercode())
-
-                # Download data
-                df_weather_data = raw_data_open_meteo_weather.get_pandas()
-
-                show_weather = True
-
-            ############################################################ 
-            # SEASONAL EVENTS LLM
-            ############################################################
-            format_seasonal_event = '''
-            ### Van Gogh Art Gallery
-            \n*A famous art gallery where many works of Van Gogh are showcased 
-            within the museum. It houses the most Van Gogh pieces of artwork. 
-            It has seasonal events across the whole range of seasons. It is 
-            recommended to go there with a friend or two.*
-            \n**Location:** It is located in Waikiki district, on the 
-            south side of Oahu. 
-            \n**Time Duration:** It is normally held during the spring. 
-            The museum is opened until 10:00 pm.
-            \n**Routes:** The best possible route is by car, but walking 
-            from the bus stop is also an option.
-            \n**Cost:** It is free to enter.
-            '''
-
-            prompt_seasonal_event = f'''
-                Look up 3 seasonal popular event or activities in {user_place} 
-                during {user_season}.
-                I need the name as the subheader, and in-depth basic 
-                information,location of event, time duration, routes, and 
-                cost as body text as a string.
-                I need them formatted like this: {format_seasonal_event} in 
-                a string. It must follow the format.
-                Do not output anything else. 
-                I need 3 events.
-                '''
-            
-            ## Store data from LLM Results if Exists for Seasonal Events
-            raw_data_seasonal_event = remove_indentation(analyze_text(HF_api_key = HF_api_key, 
-                                                   prompt = prompt_seasonal_event))
-
-
-          ############################################################ 
-          # SEASONAL FOOD LLM 
-          ############################################################ 
-            format_seasonal_food = '''
-                ### Papaya
-                \n *A fruit that is found in the tropical areas. It is grown 
-                on a tree.*
-                \n The best way to eat this fruit is raw or by using it in a 
-                papaya salad.
-                '''
-
-            prompt_seasonal_food = f'''
-                Look up 3 seasonal food in {user_place} during {user_season}.
-                Give me the name of the food and a short description. It must 
-                also have the preferred way to eat it and some more in-depth 
-                information about it. 
-                The format should look like this with more information: 
-                {format_seasonal_food} 
-                It must follow the format.
-                Do not output anything else.
-                I need 3 seasonal food.
-                '''
-            # Store data from LLM for Seasonal Food
-            raw_data_seasonal_food = remove_indentation(analyze_text(HF_api_key, 
-                                                  prompt = prompt_seasonal_food))
-
           ############################################################ 
           #ABOUT THE PLACE LLM
           ############################################################ 
-            about_prompt = f'''Tell me about {user_place} in five sentences and the 
-            famous things about that place in a string.'''
 
-            response_info = remove_indentation(analyze_text(HF_api_key, prompt = about_prompt))
-            ## if all LLMs and API successfully is stored, give permission to 
-            # show the rest of the page.
-            show_content = True
         else:
               # if fields were not completed fully
             st.error("Please check again if the fields are filled correctly.")
@@ -406,29 +289,7 @@ if show_content == True:
     ############################################################################
     # WEATHER SECTION
     ############################################################################
-
-    st.header("First Week Weather Forecast")
-
-    #seasonal divider
-    season_image(user_season[0])
-
-    if (show_weather == True):
-
-        weather_columns = st.columns(7, border = True)
-
-        for i, column in enumerate(weather_columns):
-                print("Data in Pandas", df_weather_data.iloc[i,1])
-                print("Name in Dictionary for Weathers", weather_code_dict.get(str(df_weather_data.iloc[i,1])))
-                print(type(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
-
-
-                # column.image("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhaVU8_bPnnrsJWJZrZOXpsmYfwy9xRhRCdO2zseln57YdUOE_-ClZOIDzUZ-pzanSYiEIgiUc7jauImyXPkE0v5c4XP4Fr8BwkDvseWpThBgZ8iMZtV2VYkyBB4UJ11bwc_AvyJz13ohk/s800/tenki_mark05_kumori.png")
-                column.image(weather_image(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
-
-                column.markdown(f" *{str(int(df_weather_data.iloc[i,0])*1.8+32)}\n°F* ")
-                column.write(datetime.datetime.strptime(df_weather_data.index[i],"%Y-%m-%d").strftime("%m-%d-%Y"))
-    else:
-        st.write("Weather Data cannot be shown for current location.")
+    weather_section_api(latitude = latitude, longitude = longitude, user_season=user_season[0])
 
     #seasonal divider
     season_image(user_season[0])
@@ -448,7 +309,7 @@ if show_content == True:
     # title
     st.subheader(f":red-background[:red[About {user_place}]]")
 
-    st.write(response_info)
+    about_place_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
 
     season_image(user_season[0])
 
@@ -512,21 +373,8 @@ if show_content == True:
     #seasonal divider
     season_image(user_season[0])
 
-    ############################################################################
-    # Seasonal Food 
-    ############################################################################
+    seasonal_food_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+
+    seasonal_event_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+
     
-    st.subheader(f" :red-background[:red[{user_season[0]} Seasonal Food]]")
-
-    st.write(raw_data_seasonal_food)
-
-    season_image(user_season[0])
-
-    ############################################################################
-    # Seasonal Event
-    ############################################################################
-    st.subheader(f" :red-background[:red[{user_season[0]} Seasonal Event]]")
-
-    st.write(raw_data_seasonal_event)
-
-    season_image(user_season[0])
