@@ -11,7 +11,11 @@ from openmeteopy.options import ForecastOptions
 
 # Imported Libraries
 from backend import analyze_text
+from utils import remove_indentation, weather_image, season_image
 
+weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
+season_choice = ["Spring", "Summer", "Autumn", "Winter"]
+    
 ################################################################################
 # SET UP PAGE 
 ################################################################################
@@ -85,8 +89,9 @@ weather_code_dict = {'0': weather_choice[3], ##Sunny
                       '99': weather_choice[4],  ##Thunderstorm 
                       }
 
-    ##intro text to platform
  
+
+
 ################################################################################
 # INTRODUCTION TO PLATFORM
 ################################################################################
@@ -111,7 +116,7 @@ st.link_button(label="Source Code Can Be Found Here",
                    type = "primary")
 st.divider()
 
-##bi columns for user fill-in fields and intro to platform
+##bi-columns for user fill-in fields and intro to platform
 intro_column, user_fields_column = st.columns(2)
 
 ################################################################################
@@ -119,16 +124,22 @@ intro_column, user_fields_column = st.columns(2)
 ################################################################################
 with intro_column:
     ##usage rights text
-    st.markdown('''This website uses the Large Language Model, **meta-llama's 
+
+        
+    temp = '''    This website uses the Large Language Model, **meta-llama's 
                 Llama-3.2-11B-Vision-Instruct** from **Hugging Face** to determine results. 
+                
                 The weather data is collected by using the Open-Source Weather 
-                API Open-Meteo.''') 
+                API Open-Meteo. 
+                
+                 **Hugging Face API Token is required.**
+                Permission for usage of **meta-llama Llama-3.2-11B-Vision-Instruct** model is required.
+                
+            Downloading the API found on their Github or making a request
+
+                to **Open-Meteo API** is required.'''
     
-    st.markdown('''**Hugging Face API Token is required.**
-                \n Permission for usage of **meta-llama's Llama-3.2-11B-Vision-Instruct** model is required. 
-                \n Downloading the API found on their Github or making a request 
-                to **Open-Meteo API** is required.
-                ''')
+    st.markdown(remove_indentation(temp))
     
     ##three buttons for usage rights
     st.link_button(label="Llama-3.2-11B-Vision-Instruct Model", 
@@ -319,8 +330,8 @@ with user_fields_column:
                 '''
             
             ## Store data from LLM Results if Exists for Seasonal Events
-            raw_data_seasonal_event = analyze_text(HF_api_key = HF_api_key, 
-                                                   prompt = prompt_seasonal_event)
+            raw_data_seasonal_event = remove_indentation(analyze_text(HF_api_key = HF_api_key, 
+                                                   prompt = prompt_seasonal_event))
 
 
           ############################################################ 
@@ -346,8 +357,8 @@ with user_fields_column:
                 I need 3 seasonal food.
                 '''
             # Store data from LLM for Seasonal Food
-            raw_data_seasonal_food = analyze_text(HF_api_key, 
-                                                  prompt = prompt_seasonal_food)
+            raw_data_seasonal_food = remove_indentation(analyze_text(HF_api_key, 
+                                                  prompt = prompt_seasonal_food))
 
           ############################################################ 
           #ABOUT THE PLACE LLM
@@ -355,7 +366,7 @@ with user_fields_column:
             about_prompt = f'''Tell me about {user_place} in five sentences and the 
             famous things about that place in a string.'''
 
-            response_info = analyze_text(HF_api_key, prompt = about_prompt)
+            response_info = remove_indentation(analyze_text(HF_api_key, prompt = about_prompt))
             ## if all LLMs and API successfully is stored, give permission to 
             # show the rest of the page.
             show_content = True
@@ -383,48 +394,44 @@ if show_content == True:
     end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
 
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ## title
     st.header(f'{user_season[0]} Vacation At {user_place}')
     st.header(f'{start_date} to {end_date}')
-    # st.markdown(f"""<h2 class="center-title">{user_season[0]} 
-    #             Vacation At {user_place}</h2> """ ,
-    #              unsafe_allow_html=True)
-
-    # st.markdown(f"""<h2 class="center-title">{start_date} 
-    #             to {end_date}</h2> """ , 
-    #             unsafe_allow_html=True)
 
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ############################################################################
     # WEATHER SECTION
     ############################################################################
 
     st.header("First Week Weather Forecast")
-    # ## main header
-    # st.markdown(f"""<h2 class="center-title">First Week Weather Forecast</h2> """, 
-    #             unsafe_allow_html=True)
+
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     if (show_weather == True):
 
         weather_columns = st.columns(7, border = True)
 
         for i, column in enumerate(weather_columns):
-                day_weather = weather_code_dict.get(str(df_weather_data.iloc[i,1]))
+                print("Data in Pandas", df_weather_data.iloc[i,1])
+                print("Name in Dictionary for Weathers", weather_code_dict.get(str(df_weather_data.iloc[i,1])))
+                print(type(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
 
-                column.image(f"./irasutoya_images/{day_weather}.png")
+
+                # column.image("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhaVU8_bPnnrsJWJZrZOXpsmYfwy9xRhRCdO2zseln57YdUOE_-ClZOIDzUZ-pzanSYiEIgiUc7jauImyXPkE0v5c4XP4Fr8BwkDvseWpThBgZ8iMZtV2VYkyBB4UJ11bwc_AvyJz13ohk/s800/tenki_mark05_kumori.png")
+                column.image(weather_image(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
+
                 column.markdown(f" *{str(int(df_weather_data.iloc[i,0])*1.8+32)}\n°F* ")
                 column.write(datetime.datetime.strptime(df_weather_data.index[i],"%Y-%m-%d").strftime("%m-%d-%Y"))
     else:
         st.write("Weather Data cannot be shown for current location.")
 
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ############################################################################
     # BASIC INFORMATION SECTION
@@ -436,14 +443,14 @@ if show_content == True:
     #             unsafe_allow_html=True)
 
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     # title
     st.subheader(f":red-background[:red[About {user_place}]]")
 
     st.write(response_info)
 
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ############################################################################
     # Places of Interest (Nearby Places)
@@ -503,7 +510,7 @@ if show_content == True:
                         ''')
     
     #seasonal divider
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ############################################################################
     # Seasonal Food 
@@ -513,7 +520,7 @@ if show_content == True:
 
     st.write(raw_data_seasonal_food)
 
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
 
     ############################################################################
     # Seasonal Event
@@ -522,4 +529,4 @@ if show_content == True:
 
     st.write(raw_data_seasonal_event)
 
-    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+    season_image(user_season[0])
