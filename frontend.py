@@ -5,392 +5,521 @@ import pandas as pd
 
 # Third-Parties Libraries
 import streamlit as st
-
+from openmeteopy import OpenMeteo
+from openmeteopy.daily import DailyForecast
+from openmeteopy.options import ForecastOptions
 
 # Imported Libraries
 from backend import analyze_text
 
-## functions goes here
-def get_df_from_LLM(prompt, HF_api_key):
-        raw_data = analyze_text(HF_api_key = HF_api_key, prompt = prompt)
-
-        df = pd.DataFrame(json.loads(raw_data))
-
-        df = df.transpose()
-
-        return df
-
-############################################################
-# SET UP PAGE SHENANIGANS 
-############################################################
-
+################################################################################
+# SET UP PAGE 
+################################################################################
 st.set_page_config(page_title="Vacation Planner", layout = "centered")
+
+# making center alignment titles
+st.markdown("""
+            <style>
+            .center-title 
+            {
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            margin: 0;   
+            padding: 0;
+            }
+            </style>""", 
+            unsafe_allow_html=True)
+
+################################################################################
+# TITLE TO PLATFORM
+################################################################################
 st.title(body=":red[Vacation Planner]")
 st.divider()
 
+################################################################################
+# VARIABLES
+################################################################################
+## control layout if LLM or Weather API is sucessful.
 show_content = False
+show_weather = False
 
-# ###########################################################
-# ##LLM CODE ACTUALLY HERE
-# ###########################################################
+## multiselect button for categories of interest
+list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space", 
+                      "Computer Science",  "Gaming", "Entertainment", 
+                      "Restaurants", "Wildlife", "Local Festivities", 
+                      "Cultural Performances", "Nightlife", "Botanical Gardens", 
+                      "Art", "History", "Nature", "Sports"]
 
+##weather variables for layout
+weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
+season_choice = ["Spring", "Summer", "Autumn", "Winter"]
+
+weather_code_dict = {'0': weather_choice[3], ##Sunny
+                      '1': weather_choice[3],  ##Sunny
+                      '2': weather_choice[0],  ##Cloudy
+                      '3': weather_choice[0],  ##Cloudy
+                      '45': weather_choice[0],  ##Cloudy
+                      '48': weather_choice[0],  ##Cloudy
+                      '51': weather_choice[1],  ##Rain
+                      '53': weather_choice[1],  ##Rain
+                      '55': weather_choice[1],  ##Rain
+                      '56': weather_choice[1],  ##Rain
+                      '57': weather_choice[1],  ##Rain
+                      '61': weather_choice[1],  ##Rain
+                      '63': weather_choice[1],  ##Rain
+                      '65': weather_choice[1],  ##Rain
+                      '66': weather_choice[1],  ##Rain
+                      '67': weather_choice[1],  ##Rain
+                      '71': weather_choice[2],  ##Snow
+                      '73': weather_choice[2],  ##Snow
+                      '75': weather_choice[2],  ##Snow
+                      '77': weather_choice[2],  ##Snow
+                      '80': weather_choice[1],  ##Rain
+                      '81': weather_choice[1],  ##Rain
+                      '82': weather_choice[1],  ##Rain
+                      '85': weather_choice[2],  ##Snow
+                      '86': weather_choice[2],  ##Snow 
+                      '95': weather_choice[4],  ##Thunderstorm
+                      '96': weather_choice[4],  ##Thunderstorm
+                      '99': weather_choice[4],  ##Thunderstorm 
+                      }
+
+    ##intro text to platform
+ 
+################################################################################
+# INTRODUCTION TO PLATFORM
+################################################################################
+st.markdown('''
+                A Vacation Planning Platform. By inputting the following:
+                1) Your destination name, 
+                2) The day you land and leave the destination
+                3) The type of experience you desire
+                4) The season 
+                
+                It will give the following:
+                1) An **introduction** to the location
+                2) **Weather data** of the first week (Limited to latitude and 
+                    longitudes less than 90 and doesn't not exceed -90)
+                3) **Recommended interest-related places** near and in your destination
+                4) **Map** data of the nearby places for visualization
+                5) **Seasonal Events and Food** according to the season 
+                ''')
+## source code button
+st.link_button(label="Source Code Can Be Found Here", 
+                   url="https://github.com/nerutoki/LlamaVacationPlanner", 
+                   type = "primary")
+st.divider()
+
+##bi columns for user fill-in fields and intro to platform
 intro_column, user_fields_column = st.columns(2)
 
+################################################################################
+# FIRST COLUMN WITH USER RIGHTS
+################################################################################
 with intro_column:
+    ##usage rights text
+    st.markdown('''This website uses the Large Language Model, **meta-llama's 
+                Llama-3.2-11B-Vision-Instruct** from **Hugging Face** to determine results. 
+                The weather data is collected by using the Open-Source Weather 
+                API Open-Meteo.''') 
     
-    st.markdown('''
-                A Vacation Planning Website. By giving a place's name and 
-                a category, it will return five places in the area that may align with your interest(s).
-
-                This website uses the Large Language Model, meta-llama's Llama-3.2-11B-Vision-Instruct from Hugging Face to determine results. 
-
-                Hugging Face API Token is required. Permission for
-                usage of meta-llama's Llama-3.2-11B-Vision-Instruct model is required.
+    st.markdown('''**Hugging Face API Token is required.**
+                \n Permission for usage of **meta-llama's Llama-3.2-11B-Vision-Instruct** model is required. 
+                \n Downloading the API found on their Github or making a request 
+                to **Open-Meteo API** is required.
                 ''')
     
-    st.link_button(label="Source Code Found Here", url="https://github.com/nerutoki/LlamaVacationPlanner", type = "secondary")
-
-    # col3, col4 = st.columns(2)
+    ##three buttons for usage rights
+    st.link_button(label="Llama-3.2-11B-Vision-Instruct Model", 
+                   url="https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct",
+                   type = "primary")
     
-    # col3.link_button(label="Llama-3.2-11B-Vision-Instruct", url="https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct",
-    #                  type = "secondary")
-    # col4.link_button(label = "Create Hugging Face API Token", url="https://huggingface.co/docs/hub/en/security-tokens",
-    #                  type = "secondary")
-
-list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space", "Computer Science",  "Gaming", "Entertainment", "Restaurants", "Wildlife", "Local Festivities", "Cultural Performances", "Nightlife", "Botanical Gardens", "Art", "History", "Nature", "Sports"]
+    st.link_button(label = "Create Hugging Face API Token", 
+                   url="https://huggingface.co/docs/hub/en/security-tokens",
+                   type = "primary")
     
+    st.link_button(label= "Open-Meteo Website", 
+                   url="https://open-meteo.com/", 
+                   type = 'primary')
+
+
+################################################################################
+# SECOND COLUMN: USER FILL-IN INTERFACE 
+################################################################################
 with user_fields_column:
 
-    ########################################################################################
-        ## USER INPUT AREA
-        ## THERE IS A LOT OF BUTTONS
+    user_place = st.text_input(label= "Which Place Are You Going?",
+                               type="default", 
+                               placeholder="EX: Honolulu, Hawaii", 
+                               label_visibility="visible")
 
-    ########################################################################################
-
-    user_place = st.text_input(label= "Insert Place Here",
-                type="default", placeholder="Insert City Here EX: Honolulu, Hawaii/Brooklyn", label_visibility="visible")
-
-    user_preferred_categories = st.multiselect(label="Interests/Category", options=list_of_categories, placeholder="Choose Option(s)",disabled=False, label_visibility="visible")
-
-    HF_api_key = st.text_input(label=''' # **Hugging Face Account required.**
-                  ''', type="password", placeholder="Token Here")
+    user_categories = st.multiselect(label="What Is Your Interest(s)?", 
+                                     options=list_of_categories, 
+                                     placeholder="Choose Option(s)",
+                                     disabled=False, 
+                                     label_visibility="visible")
     
-    user_start_date = st.date_input(label="Start Date", value="today", min_value=None, max_value=None, key="start date", help=None, on_change=None, args=None, kwargs=None,  format="MM/DD/YYYY", disabled=False, label_visibility="visible")
+    user_start_date = st.date_input(label="What Is Your Start Date?", 
+                                    value="today", 
+                                    min_value="today", 
+                                    max_value=None, 
+                                    key="start date", 
+                                    help=None,  
+                                    format="MM/DD/YYYY", 
+                                    disabled=False, 
+                                    label_visibility="visible")
 
-    user_end_date = st.date_input(label="End Date", value="today", min_value=None, max_value=None, key="end date", help=None, on_change=None, args=None, kwargs=None,  format="MM/DD/YYYY", disabled=False, label_visibility="visible")
+    user_end_date = st.date_input(label="What Is Your End Date?", 
+                                  value="today", 
+                                  min_value="today", 
+                                  max_value=None, 
+                                  key="end date", 
+                                  help=None, 
+                                  format="MM/DD/YYYY", 
+                                  disabled=False, 
+                                  label_visibility="visible")
 
-    user_preferred_season = st.multiselect(max_selections=1,label="Seasons", options=["Spring", "Summer", "Autumn", "Winter"], placeholder="Choose Option(s)",disabled=False, label_visibility="visible")
+    user_season = st.multiselect(max_selections=1,
+                                label= "Which Season?", 
+                                options= season_choice, 
+                                placeholder="Choose A Season", 
+                                disabled=False, 
+                                label_visibility="visible")
     
+    HF_api_key = st.text_input(label='''Fill In Your Hugging Face API Key 
+                               Below.''', 
+                               type="password", 
+                               placeholder="Hugging Face API Key Here")
+    
+    st.markdown("**Hugging Face Account required.**")
 
+
+################################################################################ 
+# LLM CONTENT HERE
+################################################################################
     if st.button("Start", type = 'primary'):
-        ########################################################################################
-        ## MOVE ALL THE LLMS DATA AND API WORK HERE PLEAAAAAAAASSEEEEEEEEEEEE
-        ########################################################################################
 
+        ## all user fields must be filled in
+        if (user_place != None and user_place != "") and (user_categories != [] and user_categories != None) and HF_api_key != None and HF_api_key != "" and user_season != None and user_season != []:
 
-        ################################################################
-        ### nearby places one
-        ################################################################
-        if (user_place != None and user_place != "") and (user_preferred_categories != [] and user_preferred_categories != None) and HF_api_key != None and HF_api_key != "" and user_preferred_season != None and user_preferred_season != []:
-            
-            nearby_places_format = '''
+            ############################################################ 
+            # LLM/API CONTENT HERE
+            ############################################################ 
+
+            ############################################################ 
+            # RECOMMENDED NEARBY PLACES LLM
+            ############################################################ 
+
+            ## LLM's Output Format for Nearby Places
+            format_nearby_places = '''
             {
             "Game Over": 
             {
             "name": "Game Over",
-            "description": "A retro arcade and board game bar featuring consoles such as Nintendo and PlayStation.",
+            "description": "A retro arcade and board game bar featuring consoles 
+            such as Nintendo and PlayStation.",
             "latitude": 21.2813146,
             "longitude": -157.8565834
              },
              "Boby's Bakery": 
-                {
-                "name": "Boby's Bakery",
-                "description": "A retro arcade and board game bar featuring consoles such as Nintendo and PlayStation.",
-                "latitude": 21.2813146,
-                "longitude": -157.8565834
-                }
-                }
+            {
+            "name": "Boby's Bakery",
+            "description": "A retro arcade and board game bar featuring consoles 
+            such as Nintendo and PlayStation.",
+            "latitude": 21.2813146,
+            "longitude": -157.8565834
+            }
+            }
             '''
 
-            nearby_places_prompt = f'''
-                I need 5 or less real places nearby {user_place} that are related to 
-                {user_preferred_categories} type(s) activities. It must be returned 
-                with a name, a one sentence description, the latititude coordinate, and the 
-                longitude coordinate as the keys, and the answers as values in a json object.
-                Name, description, latitude coordinate, and longitude coordinate must be keys. 
+            ## LLM Prompt for Nearby Places
+            prompt_nearby_places = f'''
+                I need 5 or less real places nearby {user_place} that are 
+                related to {user_categories} type(s) activities 
+                in the {user_season}.
+                It must be returned with a name, a one sentence description, 
+                the latititude coordinate, and the longitude coordinate 
+                as the keys, and the answers as values in a json object.
+                Name, description, latitude coordinate, and longitude coordinate 
+                must be keys. 
                 Only give me a one sentence description. 
                 Only give me real places. 
                 Do not use square brackets.
-                Must be in the json string format {format} . 
-                Return only a valid json string for output. Must be valid. Do not return anything else. 
+                Must be in the json string format {format_nearby_places} . 
+                Return only a valid json string for output. Must be valid. 
+                Do not return anything else. 
                 Do not use Google Maps API.
-                    '''
+                I need a proper json file that can be loaded.
+                '''
             
-            nearby_places_raw_data = nearby_places_format
+            ## Store data from LLM Results if Exists for Nearby Places
+            raw_data_nearby_places = analyze_text(HF_api_key = HF_api_key, 
+                                                  prompt = prompt_nearby_places)
             
-        #     nearby_places_raw_data = analyze_text(HF_api_key = HF_api_key, prompt = nearby_places_prompt)
-        
-            ## do this 
+            df_nearby_places = pd.DataFrame(json.loads(raw_data_nearby_places))
+            df_nearby_places = df_nearby_places.transpose()
 
+            ## save coordinates for Weather and Map Sections.
+            df_coordinates = df_nearby_places[['latitude', 'longitude']]
 
+            ############################################################ 
+            # WEATHER API
+            ############################################################ 
 
-        ################################################################
-        ### SEASONAL EVENT LLM
-        ################################################################
-            seasonal_event_prompt = f'''
-                Look up 3 seasonal popular event or activities in {user_place} during {user_preferred_season}.
-                Give me the name of the event as a header and a short description as the body text.
-                 The description must be shown as bullet points:
-                 1) where it is located
-                  2) the time duration
-                  3) the common way(s) to get there
-                  4) the overall cost
-                  5) and basic information.
+            # Latitude, Longitude 
+            longitude = df_coordinates['longitude'].iloc[0]
+            latitude =  df_coordinates['latitude'].iloc[0]
+
+            ##api cannot accept under -90 or above 90
+            if (longitude < 90 and longitude > -90) and (latitude < 90 and latitude > -90):
+                daily = DailyForecast()
+                options = ForecastOptions(latitude,longitude)
+
+                raw_data_open_meteo_weather = OpenMeteo(options=options, 
+                                                    hourly = None, 
+                                                    daily = daily.apparent_temperature_max()) 
+                raw_data_open_meteo_weather = OpenMeteo(options=options, 
+                                                hourly = None, 
+                                                daily = daily.weathercode())
+
+                # Download data
+                df_weather_data = raw_data_open_meteo_weather.get_pandas()
+
+                show_weather = True
+
+            ############################################################ 
+            # SEASONAL EVENTS LLM
+            ############################################################
+            format_seasonal_event = '''
+            ### Van Gogh Art Gallery
+            \n*A famous art gallery where many works of Van Gogh are showcased 
+            within the museum. It houses the most Van Gogh pieces of artwork. 
+            It has seasonal events across the whole range of seasons. It is 
+            recommended to go there with a friend or two.*
+            \n**Location:** It is located in Waikiki district, on the 
+            south side of Oahu. 
+            \n**Time Duration:** It is normally held during the spring. 
+            The museum is opened until 10:00 pm.
+            \n**Routes:** The best possible route is by car, but walking 
+            from the bus stop is also an option.
+            \n**Cost:** It is free to enter.
+            '''
+
+            prompt_seasonal_event = f'''
+                Look up 3 seasonal popular event or activities in {user_place} 
+                during {user_season}.
+                I need the name as the subheader, and in-depth basic 
+                information,location of event, time duration, routes, and 
+                cost as body text as a string.
+                I need them formatted like this: {format_seasonal_event} in 
+                a string. It must follow the format.
                 Do not output anything else. 
                 I need 3 events.
                 '''
-        ################################################################
-        ### WEATHER API
-        ################################################################
             
-            weather_raw_data = '''{
-                        "2025-01-03": {
-                        "Date": "January 3rd, 2025",
-                        "Day Temperature": "82°F",
-                        "Weather": "Sunny"
-                        },
-                        "2025-01-04": {
-                        "Date": "January 4th, 2025",
-                        "Day Temperature": "80°F",
-                        "Weather": "Cloudy"
-                        },
-                        "2025-01-05": {
-                        "Date": "January 5th, 2025",
-                        "Day Temperature": "78°F",
-                        "Weather": "Rain"
-                        },
-                        "2025-01-06": {
-                        "Date": "January 6th, 2025",
-                        "Day Temperature": "80°F",
-                        "Weather": "Sunny"
-                        },
-                        "2025-01-07": {
-                        "Date": "January 7th, 2025",
-                        "Day Temperature": "81°F",
-                        "Weather": "Cloudy"
-                        },
-                        "2025-01-08": {
-                        "Date": "January 8th, 2025",
-                        "Day Temperature": "79°F",
-                        "Weather": "Snow"
-                        },
-                        "2025-01-09": {
-                        "Date": "January 9th, 2025",
-                        "Day Temperature": "82°F",
-                        "Weather": "Sunny"
-                        }
-                        }
-                        '''
+            ## Store data from LLM Results if Exists for Seasonal Events
+            raw_data_seasonal_event = analyze_text(HF_api_key = HF_api_key, 
+                                                   prompt = prompt_seasonal_event)
 
-            weather_df = pd.DataFrame(json.loads(weather_raw_data))
 
-            weather_df = weather_df.transpose()
+          ############################################################ 
+          # SEASONAL FOOD LLM 
+          ############################################################ 
+            format_seasonal_food = '''
+                ### Papaya
+                \n *A fruit that is found in the tropical areas. It is grown 
+                on a tree.*
+                \n The best way to eat this fruit is raw or by using it in a 
+                papaya salad.
+                '''
 
-        ################################################################
-        ### SEASONAL FOOD
-        ################################################################
-                # seasonal_food_format = '''
-                # {
-                # “May 3rd, 2024”
-                # {
-                # "Date": “May 3rd, 2024”,
-                # “Day Temperature": “75°F”,
-                # “Weather”: “Sunny",
-                # },
-                # {
-                # “May 4th, 2024”
-                # {
-                # "Date": “May 3rd, 2024”,
-                # “Day Temperature": “75°F”,
-                # “Weather”: “Cloudy",
-                # }
-                # }
-                # '''
-
-            seasonal_food_prompt = f'''Look up 3 seasonal food in {user_place} during {user_preferred_season}.
-                Give me the name of the food and a short description. The short description must have the preferred way to eat it and basic information about it.  Do not output anything else.
+            prompt_seasonal_food = f'''
+                Look up 3 seasonal food in {user_place} during {user_season}.
+                Give me the name of the food and a short description. It must 
+                also have the preferred way to eat it and some more in-depth 
+                information about it. 
+                The format should look like this with more information: 
+                {format_seasonal_food} 
+                It must follow the format.
+                Do not output anything else.
                 I need 3 seasonal food.
-                        '''
+                '''
+            # Store data from LLM for Seasonal Food
+            raw_data_seasonal_food = analyze_text(HF_api_key, 
+                                                  prompt = prompt_seasonal_food)
 
-                # seasonal_food_raw_data = analyze_text(HF_api_key, prompt = seasonal_food_prompt)
+          ############################################################ 
+          #ABOUT THE PLACE LLM
+          ############################################################ 
+            about_prompt = f'''Tell me about {user_place} in five sentences and the 
+            famous things about that place in a string.'''
 
-                # st.write(seasonal_food_raw_data)
-
-
-
-
-
+            response_info = analyze_text(HF_api_key, prompt = about_prompt)
+            ## if all LLMs and API successfully is stored, give permission to 
+            # show the rest of the page.
             show_content = True
         else:
+              # if fields were not completed fully
             st.error("Please check again if the fields are filled correctly.")
     else:
+        ## remove all data from bottom from previous session
         st.empty()
 
 
-##############################################################################
-### SHOWING BOTTOM CONTENTS
-##############################################################################
+################################################################################
+# SHOWING BOTTOM CONTENTS
+################################################################################
+
+#if LLM successfully was stored in a var.
 if show_content == True:
 
-        ## making center alignment 
-        st.markdown("""
-        <style>
-                .center-title 
-                {
-                text-align: center;
-                font-size: 10px;
-                font-weight: bold;
-                margin: 0;   
-                padding: 0;
-                }
-        </style>""", unsafe_allow_html=True)
+    ############################################################################
+    # MAIN TITLE 
+    ############################################################################
 
+    ##reformat date into MM/DD/YYYY
+    start_date = datetime.datetime.strftime(user_start_date, "%m-%d-%Y")
+    end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
 
-        ##############################################################################
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        #### MAIN TITLE 
-        ##############################################################################
+    ## title
+    st.header(f'{user_season[0]} Vacation At {user_place}')
+    st.header(f'{start_date} to {end_date}')
+    # st.markdown(f"""<h2 class="center-title">{user_season[0]} 
+    #             Vacation At {user_place}</h2> """ ,
+    #              unsafe_allow_html=True)
 
-        start_date = datetime.datetime.strftime(user_start_date, "%m-%d-%Y")
-        end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
+    # st.markdown(f"""<h2 class="center-title">{start_date} 
+    #             to {end_date}</h2> """ , 
+    #             unsafe_allow_html=True)
 
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+    ############################################################################
+    # WEATHER SECTION
+    ############################################################################
 
-        st.markdown(f"""<h2 class="center-title">{user_preferred_season[0]} Vacation At {user_place}</h2> """ , unsafe_allow_html=True)
+    st.header("First Week Weather Forecast")
+    # ## main header
+    # st.markdown(f"""<h2 class="center-title">First Week Weather Forecast</h2> """, 
+    #             unsafe_allow_html=True)
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        st.markdown(f"""<h2 class="center-title">{start_date} to {end_date}</h2> """ , unsafe_allow_html=True)
-
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
-
-
-
-        ##############################################################################
-
-        #### WEATHER BLOCK
-        ##############################################################################
-
-
-        st.markdown(f"""<h2 class="center-title">First Week Weather Forecast</h2> """ , unsafe_allow_html=True)
-        st.divider()
+    if (show_weather == True):
 
         weather_columns = st.columns(7, border = True)
 
         for i, column in enumerate(weather_columns):
-                column.image(f"./irasutoya_images/{weather_df["Weather"].iloc[i].lower()}.png")
-                column.subheader(weather_df["Day Temperature"].iloc[i])
-                column.write(weather_df["Date"].iloc[i])
+                day_weather = weather_code_dict.get(str(df_weather_data.iloc[i,1]))
 
-        
-        ##############################################################################
+                column.image(f"./irasutoya_images/{day_weather}.png")
+                column.markdown(f" *{str(int(df_weather_data.iloc[i,0])*1.8+32)}\n°F* ")
+                column.write(datetime.datetime.strptime(df_weather_data.index[i],"%Y-%m-%d").strftime("%m-%d-%Y"))
+    else:
+        st.write("Weather Data cannot be shown for current location.")
 
-        #### BASIC INFORMATION
-        ##############################################################################
-        st.markdown(f"""<h2 class="center-title">Comprehensive Information Board</h2> """ , unsafe_allow_html=True)
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        st.divider()
+    ############################################################################
+    # BASIC INFORMATION SECTION
+    ############################################################################
+    
+    # main header
+    st.header("Comprehensive Information Board")
+    # st.markdown(f"""<h2 class="center-title">Comprehensive Information Board</h2> """, 
+    #             unsafe_allow_html=True)
 
-        st.subheader(f":red-background[:red[About {user_place}]]")
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        ##############################################################################
+    # title
+    st.subheader(f":red-background[:red[About {user_place}]]")
 
-        #### MAP AND NEARBY PLACES TO VIEW
-        ##############################################################################
+    st.write(response_info)
 
-        st.markdown("##")
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
+
+    ############################################################################
+    # Places of Interest (Nearby Places)
+    ############################################################################
+    
+    st.subheader(f''' :red-background[:red[Places of Interest in {user_place}]]''')
+    
+    ## show map data
+    st.divider()
+    st.map(df_coordinates, size = 1000, color = '#ffaa00')
+    st.divider()
+
+    ## show places of interest with 3 on left and 2 on right
+    left_text_box, right_text_box = st.columns(2)
+
+    with left_text_box:
+        st.subheader(f'''
+        :blue-background[{df_nearby_places["name"].iloc[0]}]
+        ''')
+
+        st.markdown(f'''
+        {df_nearby_places["description"].iloc[0]}
+        ''')
+
+        st.subheader(f''' 
+                        :green-background[{df_nearby_places["name"].iloc[1]}]
+                        ''')
+
+        st.markdown(f'''
+                        {df_nearby_places["description"].iloc[1]}
+                        ''')
 
         st.subheader(f'''
-         :red-background[:red[Nearby Places to {user_place}]]
-        
-        ''')
-        st.divider()
+                        :red-background[{df_nearby_places["name"].iloc[2]}]
+                        ''')
 
-        st.write("MAN I WANT A MAP")
-
-
-# df = pd.DataFrame(json.loads(nearby_places_raw_data))
-
-# df = df.transpose()
-
-# coordinates_df = df[['latitude', 'longitude']]
-
-#     st.map(coordinates_df, size = 1000, color = '#ffaa00')
-
-        st.divider()
-
-        left_text_box, right_text_box = st.columns(2)
-
-        st.subheader(f''' :red-background[:red[Places of Interest in {user_place}]]''')
-
-        with left_text_box:
-                print("insert things here")
-        # st.subheader(f'''
-        # :blue-background[{df["name"].iloc[0]}]
-        # ''')
-
-        # st.markdown(f'''
-        # {df["description"].iloc[0]}
-        # ''')
-
-                # st.subheader(f''' 
-                #         :green-background[{df["name"].iloc[1]}]
-                #         ''')
-
-                # st.markdown(f'''
-                #         {df["description"].iloc[1]}
-                #         ''')
-
-                # st.subheader(f'''
-                #         :red-background[{df["name"].iloc[2]}]
-                #         ''')
-
-                # st.markdown(f'''
-                #         {df["description"].iloc[2]}
-                #         ''')
+        st.markdown(f'''
+                        {df_nearby_places["description"].iloc[2]}
+                        ''')
 
 
-# with right_text_box:
-#         st.subheader(f'''
-#                         :violet-background[{df["name"].iloc[3]}]
-#                         ''')
+    with right_text_box:
+        st.subheader(f'''
+                        :violet-background[{df_nearby_places["name"].iloc[3]}]
+                        ''')
 
-#         st.markdown(f'''
-#                         {df["description"].iloc[3]}
-#                         ''')
+        st.markdown(f'''
+                        {df_nearby_places["description"].iloc[3]}
+                        ''')
 
-#         st.subheader(f''' 
-#                         :orange-background[{df["name"].iloc[4]}]
-#                         ''')
+        st.subheader(f''' 
+                        :orange-background[{df_nearby_places["name"].iloc[4]}]
+                        ''')
 
-#         st.markdown(f'''
-#                         {df["description"].iloc[4]}
-#                         ''')
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+        st.markdown(f'''
+                        {df_nearby_places["description"].iloc[4]}
+                        ''')
+    
+    #seasonal divider
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        ##############################################################################
+    ############################################################################
+    # Seasonal Food 
+    ############################################################################
+    
+    st.subheader(f" :red-background[:red[{user_season[0]} Seasonal Food]]")
 
-        #### seasonal food and seasonal events
-        ##############################################################################
+    st.write(raw_data_seasonal_food)
 
-        st.subheader(f" :red-background[:red[{user_preferred_season[0]} Seasonal Food]]")
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
 
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+    ############################################################################
+    # Seasonal Event
+    ############################################################################
+    st.subheader(f" :red-background[:red[{user_season[0]} Seasonal Event]]")
 
-        st.subheader(f" :red-background[:red[{user_preferred_season[0]} Seasonal Event]]")
+    st.write(raw_data_seasonal_event)
 
-        # seasonal_event_raw_data = analyze_text(HF_api_key, prompt = seasonal_event_prompt)
-
-        # st.write(seasonal_event_raw_data)
-
-        st.image(f"./irasutoya_images/{user_preferred_season[0].lower()}_season.png")
+    st.image(f"./irasutoya_images/{user_season[0].lower()}_season.png")
