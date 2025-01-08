@@ -69,12 +69,12 @@ $ streamlit run frontend.py
 
 3) Click "Start".If the fields are not filled in properly, it will not proceed. If an unvalid Hugging Face API is given, there will be errors. The result is as shown below.
 
-![First Week's Weather](./docs/.weather.png)
+![First Week's Weather](./docs/weather.png)
 ![About Place](./docs/.about.png)
-![Nearby Places Map Interface](./docs/.map.png)
-![Nearby Places Section](./docs/.nearby_places.png)
-![Seasonal Food Section](./docs/.seasonal_food.png)
-![Seasonal Event Section](./docs/.seasonal_event.png)
+![Nearby Places Map Interface](./docs/map.png)
+![Nearby Places Section](./docs/nearby_places.png)
+![Seasonal Food Section](./docs/seasonal_food.png)
+![Seasonal Event Section](./docs/seasonal_event.png)
 
 ## Resources
 - The Large Language Model, Meta Llama-3.2-11B-Vision-Instruct, https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct is used.
