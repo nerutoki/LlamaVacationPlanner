@@ -65,7 +65,7 @@ $ streamlit run frontend.py
 
 ## Usage of Platform
 1) Fill in the fields below. 
-![Website Fill In Option](./docs/.user_fill_in_after.png)
+![Website Fill In Option](./docs/user_fill_in_after.png)
 
 3) Click "Start".If the fields are not filled in properly, it will not proceed. If an unvalid Hugging Face API is given, there will be errors. The result is as shown below.
 

@@ -48,14 +48,14 @@ season_choice = ["Spring", "Summer", "Autumn", "Winter"]
 ################################################################################
 st.markdown('''
                 A Vacation Planning Platform. By inputting the following:
-                1) Your destination name
-                2) The day you land and leave the destination
-                3) The type of experience you desire
-                4) The season you'll be coming in
+                1) Your destination's name
+                2) The date of arrival and departure 
+                3) The interests you may have 
+                4) The Season of Arrival
                 
                 It will give the following:
                 1) An **introduction** to the location
-                2) **Weather data** of the first week (Limited to latitude and 
+                2) **Weather Data** of the first week (Limited to latitude and 
                     longitudes less than 90 and doesn't not exceed -90)
                 3) **Recommended interest-related places** near and in your destination
                 4) **Map** data of nearby places near your destination for visualization
