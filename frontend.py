@@ -11,8 +11,8 @@ from openmeteopy.options import ForecastOptions
 
 # Imported Libraries
 from backend import analyze_text
-from utils import remove_indentation, weather_image, season_image
-from components.weather_section import weather_section_api 
+from utils import remove_indentation, dict_weather_images, dict_season_images
+from components.weather_section import weather_section_widget
 from components.seasonal_event_section import seasonal_event_widget
 from components.seasonal_food_section import seasonal_food_widget
 from components.about_place_section import about_place_widget
@@ -21,20 +21,6 @@ from components.about_place_section import about_place_widget
 # SET UP PAGE 
 ################################################################################
 st.set_page_config(page_title="Vacation Planner", layout = "centered")
-
-# making center alignment titles
-st.markdown("""
-            <style>
-            .center-title 
-            {
-            text-align: center;
-            font-size: 10px;
-            font-weight: bold;
-            margin: 0;   
-            padding: 0;
-            }
-            </style>""", 
-            unsafe_allow_html=True)
 
 ################################################################################
 # TITLE TO PLATFORM
@@ -45,9 +31,7 @@ st.divider()
 ################################################################################
 # VARIABLES
 ################################################################################
-## control layout if LLM or Weather API is sucessful.
 show_content = False
-
 ## multiselect button for categories of interest
 list_of_categories = ["Landmark", "Museums", "Film & Cinema", "Space", 
                       "Computer Science",  "Gaming", "Entertainment", 
@@ -64,17 +48,17 @@ season_choice = ["Spring", "Summer", "Autumn", "Winter"]
 ################################################################################
 st.markdown('''
                 A Vacation Planning Platform. By inputting the following:
-                1) Your destination name, 
+                1) Your destination name
                 2) The day you land and leave the destination
                 3) The type of experience you desire
-                4) The season 
+                4) The season you'll be coming in
                 
                 It will give the following:
                 1) An **introduction** to the location
                 2) **Weather data** of the first week (Limited to latitude and 
                     longitudes less than 90 and doesn't not exceed -90)
                 3) **Recommended interest-related places** near and in your destination
-                4) **Map** data of the nearby places for visualization
+                4) **Map** data of nearby places near your destination for visualization
                 5) **Seasonal Events and Food** according to the season 
                 ''')
 ## source code button
@@ -93,7 +77,7 @@ with intro_column:
     ##usage rights text
 
         
-    temp = '''    This website uses the Large Language Model, **meta-llama's 
+    temp = '''This website uses the Large Language Model, **meta-llama's 
                 Llama-3.2-11B-Vision-Instruct** from **Hugging Face** to determine results. 
                 
                 The weather data is collected by using the Open-Source Weather 
@@ -173,9 +157,9 @@ with user_fields_column:
     st.markdown("**Hugging Face Account required.**")
 
 
-################################################################################ 
-# LLM CONTENT HERE
-################################################################################
+    ################################################################################ 
+    # LLM CONTENT HERE
+    ################################################################################
     if st.button("Start", type = 'primary'):
 
         ## all user fields must be filled in
@@ -199,8 +183,8 @@ with user_fields_column:
             such as Nintendo and PlayStation.",
             "latitude": 21.2813146,
             "longitude": -157.8565834
-             },
-             "Boby's Bakery": 
+                },
+                "Boby's Bakery": 
             {
             "name": "Boby's Bakery",
             "description": "A retro arcade and board game bar featuring consoles 
@@ -215,7 +199,7 @@ with user_fields_column:
             prompt_nearby_places = f'''
                 I need 5 or less real places nearby {user_place} that are 
                 related to {user_categories} type(s) activities 
-                in the {user_season}.
+                in the {user_season[0]}.
                 It must be returned with a name, a one sentence description, 
                 the latititude coordinate, and the longitude coordinate 
                 as the keys, and the answers as values in a json object.
@@ -233,7 +217,7 @@ with user_fields_column:
             
             ## Store data from LLM Results if Exists for Nearby Places
             raw_data_nearby_places = analyze_text(HF_api_key = HF_api_key, 
-                                                  prompt = prompt_nearby_places)
+                                                    prompt = prompt_nearby_places)
             
             df_nearby_places = pd.DataFrame(json.loads(raw_data_nearby_places))
             df_nearby_places = df_nearby_places.transpose()
@@ -249,132 +233,122 @@ with user_fields_column:
             longitude = df_coordinates['longitude'].iloc[0]
             latitude =  df_coordinates['latitude'].iloc[0]
 
-          ############################################################ 
-          #ABOUT THE PLACE LLM
-          ############################################################ 
-
+            show_content = True
         else:
-              # if fields were not completed fully
+            # if fields were not completed fully
             st.error("Please check again if the fields are filled correctly.")
     else:
         ## remove all data from bottom from previous session
         st.empty()
 
-
 ################################################################################
 # SHOWING BOTTOM CONTENTS
 ################################################################################
 
-#if LLM successfully was stored in a var.
+############################################################################
+# MAIN TITLE 
+############################################################################
+
 if show_content == True:
+        ##reformat date into MM/DD/YYYY
+        start_date = datetime.datetime.strftime(user_start_date, "%m-%d-%Y")
+        end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
 
-    ############################################################################
-    # MAIN TITLE 
-    ############################################################################
+        #seasonal divider
+        st.image(dict_season_images.get(user_season[0]))
 
-    ##reformat date into MM/DD/YYYY
-    start_date = datetime.datetime.strftime(user_start_date, "%m-%d-%Y")
-    end_date = datetime.datetime.strftime(user_end_date, "%m-%d-%Y")
+        ## title
+        st.header(f'{user_season[0]} Vacation At {user_place}')
+        st.header(f'{start_date} to {end_date}')
 
-    #seasonal divider
-    season_image(user_season[0])
+        #seasonal divider
+        st.image(dict_season_images.get(user_season[0]))
 
-    ## title
-    st.header(f'{user_season[0]} Vacation At {user_place}')
-    st.header(f'{start_date} to {end_date}')
+        ############################################################################
+        # WEATHER SECTION
+        ############################################################################
+        weather_section_widget(latitude = latitude, longitude = longitude, user_season=user_season[0])
 
-    #seasonal divider
-    season_image(user_season[0])
+        #seasonal divider
+        st.divider()
 
-    ############################################################################
-    # WEATHER SECTION
-    ############################################################################
-    weather_section_api(latitude = latitude, longitude = longitude, user_season=user_season[0])
+        ############################################################################
+        # BASIC INFORMATION SECTION
+        ############################################################################
 
-    #seasonal divider
-    season_image(user_season[0])
+        # main header
+        st.header("Comprehensive Information Board")
 
-    ############################################################################
-    # BASIC INFORMATION SECTION
-    ############################################################################
-    
-    # main header
-    st.header("Comprehensive Information Board")
-    # st.markdown(f"""<h2 class="center-title">Comprehensive Information Board</h2> """, 
-    #             unsafe_allow_html=True)
+        #seasonal divider
+        st.divider()
 
-    #seasonal divider
-    season_image(user_season[0])
+        # title
+        st.subheader(f":red-background[:red[About {user_place}]]")
 
-    # title
-    st.subheader(f":red-background[:red[About {user_place}]]")
+        about_place_widget(user_place = user_place, HF_api_key=HF_api_key)
 
-    about_place_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+        st.image(dict_season_images.get(user_season[0]))
 
-    season_image(user_season[0])
+        ############################################################################
+        # Places of Interest (Nearby Places)
+        ############################################################################
 
-    ############################################################################
-    # Places of Interest (Nearby Places)
-    ############################################################################
-    
-    st.subheader(f''' :red-background[:red[Places of Interest in {user_place}]]''')
-    
-    ## show map data
-    st.divider()
-    st.map(df_coordinates, size = 1000, color = '#ffaa00')
-    st.divider()
+        st.subheader(f''' :red-background[:red[Places of Interest in {user_place}]]''')
 
-    ## show places of interest with 3 on left and 2 on right
-    left_text_box, right_text_box = st.columns(2)
+        ## show map data
+        st.divider()
+        st.map(df_coordinates, size = 1000, color = '#ffaa00')
+        st.divider()
 
-    with left_text_box:
-        st.subheader(f'''
-        :blue-background[{df_nearby_places["name"].iloc[0]}]
-        ''')
+        ## show places of interest with 3 on left and 2 on right
+        left_text_box, right_text_box = st.columns(2)
 
-        st.markdown(f'''
-        {df_nearby_places["description"].iloc[0]}
-        ''')
+        with left_text_box:
+            st.subheader(f'''
+            :blue-background[{df_nearby_places["name"].iloc[0]}]
+            ''')
 
-        st.subheader(f''' 
-                        :green-background[{df_nearby_places["name"].iloc[1]}]
-                        ''')
+            st.markdown(f'''
+            {df_nearby_places["description"].iloc[0]}
+            ''')
 
-        st.markdown(f'''
-                        {df_nearby_places["description"].iloc[1]}
-                        ''')
+            st.subheader(f''' 
+                            :green-background[{df_nearby_places["name"].iloc[1]}]
+                            ''')
 
-        st.subheader(f'''
-                        :red-background[{df_nearby_places["name"].iloc[2]}]
-                        ''')
+            st.markdown(f'''
+                            {df_nearby_places["description"].iloc[1]}
+                            ''')
 
-        st.markdown(f'''
-                        {df_nearby_places["description"].iloc[2]}
-                        ''')
+            st.subheader(f'''
+                            :red-background[{df_nearby_places["name"].iloc[2]}]
+                            ''')
+
+            st.markdown(f'''
+                            {df_nearby_places["description"].iloc[2]}
+                            ''')
 
 
-    with right_text_box:
-        st.subheader(f'''
-                        :violet-background[{df_nearby_places["name"].iloc[3]}]
-                        ''')
+        with right_text_box:
+            st.subheader(f'''
+                            :violet-background[{df_nearby_places["name"].iloc[3]}]
+                            ''')
 
-        st.markdown(f'''
-                        {df_nearby_places["description"].iloc[3]}
-                        ''')
+            st.markdown(f'''
+                            {df_nearby_places["description"].iloc[3]}
+                            ''')
 
-        st.subheader(f''' 
-                        :orange-background[{df_nearby_places["name"].iloc[4]}]
-                        ''')
+            st.subheader(f''' 
+                            :orange-background[{df_nearby_places["name"].iloc[4]}]
+                            ''')
 
-        st.markdown(f'''
-                        {df_nearby_places["description"].iloc[4]}
-                        ''')
-    
-    #seasonal divider
-    season_image(user_season[0])
+            st.markdown(f'''
+                            {df_nearby_places["description"].iloc[4]}
+                            ''')
 
-    seasonal_food_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+        st.image(dict_season_images.get(user_season[0]))
 
-    seasonal_event_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
-
-    
+        seasonal_food_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+        st.image(dict_season_images.get(user_season[0]))
+        seasonal_event_widget(user_place = user_place, user_season=user_season[0], HF_api_key=HF_api_key)
+        st.image(dict_season_images.get(user_season[0]))

@@ -1,16 +1,26 @@
  # Standard Libraries
-import datetime
-import json
-import pandas as pd
 
 # Third-Parties Libraries
 import streamlit as st
 
-from utils import season_image,  weather_image, remove_indentation
+from utils import dict_season_images, remove_indentation
 from backend import analyze_text          
 
 
 def seasonal_food_widget(user_place, user_season, HF_api_key):
+    """ Take in the user's response in order to dynamically edit 
+    the prompt to send to the LLM.
+        
+    Args:
+        HF_api_key (str): Hugging Face API Token
+        user_place (str): the place the user's going to
+        user_season (str): the season when the user comes in for 
+                            dynamically creating dividers
+        
+    Return: 
+        response (str): Answer from LLM
+
+    """
     ############################################################ 
     # SEASONAL FOOD LLM 
     ############################################################ 
@@ -41,8 +51,8 @@ def seasonal_food_widget(user_place, user_season, HF_api_key):
     # Seasonal Food 
     ############################################################################
 
-    st.subheader(f" :red-background[:red[{user_season[0]} Seasonal Food]]")
+    st.subheader(f" :red-background[:red[{user_season} Seasonal Food]]")
 
     st.write(raw_data_seasonal_food)
 
-    season_image(user_season[0])
+    dict_season_images.get(user_season)

@@ -10,9 +10,9 @@ from openmeteopy.daily import DailyForecast
 from openmeteopy.options import ForecastOptions
 
 # Import 
-from utils import season_image,  weather_image
-# from utils import season_image, weather_image
+from utils import dict_season_images, dict_weather_images
 
+#Variables
 weather_choice = ["Cloudy", "Rain", "Snow", "Sunny", "Thunderstorm"]
 
 weather_code_dict = {'0': weather_choice[3], ##Sunny
@@ -47,7 +47,25 @@ weather_code_dict = {'0': weather_choice[3], ##Sunny
 
 show_weather = False
 
-def weather_section_api(latitude, longitude, user_season):
+def weather_section_widget(latitude, longitude, user_season):
+    """ Take in the latitude and longitude to produce the first week's weather
+    of the place's coordinates.
+        
+    Args:
+        latitude (str): Latitude coordinates of the place
+        longitude (str): Longitude coordinates of the place
+        user_season (str): the season when the user comes in for 
+                            dynamically creating dividers
+        
+    Return: 
+        response (str): Answer from LLM
+
+    """
+   
+    st.header("First Week Weather Forecast")
+    #seasonal divider
+    st.divider()
+
     ##api cannot accept under -90 or above 90
     if (longitude < 90 and longitude > -90) and (latitude < 90 and latitude > -90):
         daily = DailyForecast()
@@ -63,28 +81,13 @@ def weather_section_api(latitude, longitude, user_season):
         # Download data
         df_weather_data = raw_data_open_meteo_weather.get_pandas()
 
-        show_weather = True
 
-        st.header("First Week Weather Forecast")
+        weather_columns = st.columns(7, border = True)
 
-        #seasonal divider
-        season_image(user_season[0])
-
-        if (show_weather == True):
-
-            weather_columns = st.columns(7, border = True)
-
-            for i, column in enumerate(weather_columns):
-                    print("Data in Pandas", df_weather_data.iloc[i,1])
-                    print("Name in Dictionary for Weathers", weather_code_dict.get(str(df_weather_data.iloc[i,1])))
-                    print(type(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
-
-
-                    # column.image("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhaVU8_bPnnrsJWJZrZOXpsmYfwy9xRhRCdO2zseln57YdUOE_-ClZOIDzUZ-pzanSYiEIgiUc7jauImyXPkE0v5c4XP4Fr8BwkDvseWpThBgZ8iMZtV2VYkyBB4UJ11bwc_AvyJz13ohk/s800/tenki_mark05_kumori.png")
-                    column.image(weather_image(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
-
-                    column.markdown(f" *{str(int(df_weather_data.iloc[i,0])*1.8+32)}\n°F* ")
-                    column.write(datetime.datetime.strptime(df_weather_data.index[i],"%Y-%m-%d").strftime("%m-%d-%Y"))
-        else:
-            st.write("Weather Data cannot be shown for current location.")
+        for i, column in enumerate(weather_columns):
+                column.image(dict_weather_images.get(weather_code_dict.get(str(df_weather_data.iloc[i,1]))))
+                column.markdown(f" *{str(int((df_weather_data.iloc[i,0]*1.8+32)))} \n°F*")
+                column.write(datetime.datetime.strptime(df_weather_data.index[i],"%Y-%m-%d").strftime("%m-%d-%Y"))
+    else:
+        st.write("Weather Data cannot be shown for current location.")
 
