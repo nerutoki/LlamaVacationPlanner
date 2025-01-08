@@ -16,7 +16,7 @@ It will give the following:
 4) **Map** data of nearby places near your destination for visualization
 5) **Seasonal Events and Food** according to the season and destination
 
-![Website Interface Example](./docs/.user_fill_in.png)
+![Website Interface Example](./docs/user_fill_in.png)
 
 ## Table of Content
 - [Getting Started](#getting-started)
@@ -70,11 +70,11 @@ $ streamlit run frontend.py
 3) Click "Start".If the fields are not filled in properly, it will not proceed. If an unvalid Hugging Face API is given, there will be errors. The result is as shown below.
 
 ![First Week's Weather](./docs/weather.png)
-![About Place](./docs/.about.png)
+![About Place](./docs/about.png)
 ![Nearby Places Map Interface](./docs/map.png)
 ![Nearby Places Section](./docs/nearby_places.png)
 ![Seasonal Food Section](./docs/seasonal_food.png)
-![Seasonal Event Section](./docs/seasonal_event.png)
+![Seasonal Event Section](./docs/seasonal_events.png)
 
 ## Resources
 - The Large Language Model, Meta Llama-3.2-11B-Vision-Instruct, https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct is used.
