@@ -49,3 +49,4 @@ typing-extensions==4.12.2
 tzdata==2024.2
 urllib3==2.3.0
 uv==0.5.13
+git+https://github.com/m0rp43us/openmeteopy
